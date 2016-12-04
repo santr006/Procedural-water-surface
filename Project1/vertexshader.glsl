@@ -7,10 +7,15 @@ layout(location = 2) in vec2 TexCoord;
 uniform mat4 MV;
 uniform mat4 P;
 uniform float time;
+uniform vec3 light;
+uniform vec3 camera;
+uniform float stepSize;
 
+out vec3 lightPosition;
+out vec3 cameraPosition;
 out vec3 interpolatedNormal;
-out vec2 st;
-out vec3 fPos;
+//out vec2 st;
+//out vec3 fPos;
 
 //
 // Description : Array and textureless GLSL 2D/3D/4D simplex 
@@ -117,11 +122,70 @@ float snoise(vec3 v)
 
 // ======================================================================
 
+vec3 displacementForSingleWave(vec2 x0)
+{
+	//three waves
+	float waveLength = 2;
+	float waveLength2 = 2;
+	float waveLength3 = 2;
+	float A = 0.4;
+	float A2 = 0.4;
+	float A3 = 0.4;
+	vec2 k = vec2(2 * 3.14 / waveLength, 0);//direction
+	vec2 k2 = vec2(3.14 / waveLength, 3.14 / waveLength);//direction
+	vec2 k3 = vec2(0.5 * 3.14 / waveLength, 1.5 * 3.14 / waveLength);//direction
+	float w = 3.14;//speed
+	float w2 = 3.14;//speed
+	float w3 = 3.14;//speed
+	float phi = 0;//förskjutning
+	float phi2 = 3.14 / 2;//förskjutning
+	float phi3 = 0;//förskjutning
+
+	vec2 x = x0 - (k / k.length()) * A * sin(k * x0 - w * time + phi)
+				/*- (k2 / k2.length()) * A2 * sin(k2 * x0 - w2 * time + phi2)
+				- (k3 / k3.length()) * A3 * sin(k3 * x0 - w3 * time + phi3)*/;
+	float y = A * cos(dot(k, x0) - w * time + phi)
+			/*+ A2 * cos(dot(k2, x0) - w2 * time + phi2)
+			+ A3 * cos(dot(k3, x0) - w3 * time + phi3)*/;
+
+	return vec3(x.x, y, x.y);
+}
+
+vec3 calculateNormal()
+{
+	vec3 posMid = Position + displacementForSingleWave(vec2(Position.x, Position.z));//0.05*Normal*snoise(40.0*Position + time * 0.5);
+	vec3 posUp = Position + displacementForSingleWave(vec2(Position.x, Position.z-stepSize));//vec3(0,0,-stepSize) + 0.05*Normal*snoise(40.0*(Position + vec3(0,0,-stepSize)) + time * 0.5);
+	vec3 posDown = Position + displacementForSingleWave(vec2(Position.x, Position.z+stepSize));//vec3(0,0,stepSize) + 0.05*Normal*snoise(40.0*(Position + vec3(0,0,stepSize)) + time * 0.5);
+	vec3 posLeft = Position + displacementForSingleWave(vec2(Position.x-stepSize, Position.z));//vec3(-stepSize,0,0) + 0.05*Normal*snoise(40.0*(Position + vec3(-stepSize,0,0)) + time * 0.5);
+	vec3 posRight = Position + displacementForSingleWave(vec2(Position.x+stepSize, Position.z));//vec3(stepSize,0,0) + 0.05*Normal*snoise(40.0*(Position + vec3(stepSize,0,0)) + time * 0.5);
+
+	vec3 vecUp = normalize(posUp - posMid);
+	vec3 vecDown = normalize(posDown - posMid);
+	vec3 vecLeft = normalize(posLeft - posMid);
+	vec3 vecRight = normalize(posRight - posMid);
+
+	vec3 normNE = cross(vecUp, vecRight);
+	vec3 normNW = cross(vecLeft, vecUp);
+	vec3 normSW = cross(vecDown, vecLeft);
+	vec3 normSE = cross(vecUp, vecDown);
+
+	return normalize(normNE + normNW + normSW + normSE);
+}
+
 void main(){
-  vec3 pos = Position + 0.05*Normal*snoise(40.0*Position);
-  gl_Position = (P * MV) * vec4(pos, 1.0);
-  fPos = pos;
-  interpolatedNormal = mat3(MV) * Normal;
-  st = TexCoord;
+	vec3 pos = Position + displacementForSingleWave(vec2(Position.x, Position.z));//0.05*Normal*snoise(40.0*Position + time * 0.5);
+	gl_Position = (P * MV) * vec4(pos, 1.0);
+
+	vec4 temp = (P * MV) * vec4(light, 1.0);
+	lightPosition = temp.xyz;
+
+	temp = (P * MV) * vec4(camera, 1.0);
+	cameraPosition = temp.xyz;
+
+	temp = (P * MV) * vec4(calculateNormal(), 1.0);
+	interpolatedNormal = temp.xyz;
+
+	//fPos = pos;
+	//st = TexCoord;
 }
 

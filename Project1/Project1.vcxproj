@@ -44,7 +44,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Sandras\Documents\Libraries\glm-0.9.7.5\glm;C:\Users\Sandras\Documents\Libraries\glfw-3.2.bin.WIN32\glfw-3.2.bin.WIN32\include\GLFW;C:\Users\Sandras\Documents\Libraries\glew-1.13.0-win32\glew-1.13.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Sandras\Documents\Libraries\glm-0.9.7.5\glm;C:\Users\Sandras\Documents\Libraries\glfw-3.2.bin.WIN32\glfw-3.2.bin.WIN32\include\GLFW;C:\Users\Sandras\Documents\Libraries\glew-1.13.0-win32\glew-1.13.0\include;C:\Users\Sandras\Documents\Libraries\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -67,10 +67,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\Libraries\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\..\..\Libraries\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\..\..\Libraries\imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui_impl_glfw_gl3.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="myShader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\Libraries\imgui\imconfig.h" />
+    <ClInclude Include="..\..\..\..\Libraries\imgui\imgui.h" />
+    <ClInclude Include="..\..\..\..\Libraries\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\..\..\Libraries\imgui\stb_rect_pack.h" />
+    <ClInclude Include="..\..\..\..\Libraries\imgui\stb_textedit.h" />
+    <ClInclude Include="..\..\..\..\Libraries\imgui\stb_truetype.h" />
+    <ClInclude Include="imgui_impl_glfw_gl3.h" />
     <ClInclude Include="myShader.h" />
   </ItemGroup>
   <ItemGroup>

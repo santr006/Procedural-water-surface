@@ -6,17 +6,24 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+#include <imgui.h>
+#include <imgui_internal.h>
+#include <stb_rect_pack.h>
+#include <stb_textedit.h>
+#include <stb_truetype.h>
 using namespace glm;
 
 #include "myShader.h"
+#include "imgui_impl_glfw_gl3.h"
 
 GLFWwindow* window;
 const int width = 700;
 const int height = 700;
 
 void init(); 
-void subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs);
+float subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs);
 void createQuad(std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs);
+
 
 static const GLfloat g_vertex_buffer_quad[] = {
 	1.0f, 0.0f, 1.0f,
@@ -46,11 +53,11 @@ static const GLfloat g_vertex_buffer_quad_tex[] = {
 };
 
 int main(){
-	vec3 cameraPosition(0, 2, -4);
+	vec3 cameraPosition(0, 4, -8);
 	vec3 cameraLookAtPosition(0, 0, 0);
 	float nearPlane = 1;
 	float farPlane = 10;
-	vec3 lightPosition(0, 6, 0);
+	vec3 lightPosition(2, 3, 0);
 
 	init();
 
@@ -66,7 +73,7 @@ int main(){
 	std::vector<vec3> quadVerts, quadNorms;
 	std::vector<vec2> quadUVs;
 	createQuad(&quadVerts, &quadNorms, &quadUVs);
-	subdivide(5, &quadVerts, &quadNorms, &quadUVs);
+	float stepSize = subdivide(6, &quadVerts, &quadNorms, &quadUVs);
 	int numOfVerts = quadVerts.size();
 	std::cout << "main num vert " << numOfVerts << std::endl;
 
@@ -106,6 +113,9 @@ int main(){
 	GLuint demoMVID = glGetUniformLocation(demoShader.programID, "MV");
 	GLuint demoPID = glGetUniformLocation(demoShader.programID, "P");
 	GLuint demoTimeID = glGetUniformLocation(demoShader.programID, "time");
+	GLuint demoLightID = glGetUniformLocation(demoShader.programID, "light");
+	GLuint demoCameraID = glGetUniformLocation(demoShader.programID, "camera");
+	GLuint demoStepID = glGetUniformLocation(demoShader.programID, "stepSize");
 	
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);	
@@ -116,7 +126,7 @@ int main(){
 	glm::mat4 Light = glm::lookAt(lightPosition, cameraLookAtPosition, glm::vec3(0, 0, 1));
 	glm::mat4 mvpLight = Projection * Light * Model;
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	//main loop
 	do {
@@ -130,14 +140,47 @@ int main(){
 				lastTime += 1.0;
 			}*/
 
+		ImGui_ImplGlfwGL3_NewFrame();
+
+		// 1. Show a simple window
+		// Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
+		{
+			static float f = 0.0f;
+			ImGui::Text("Hello, world!");
+			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+			//ImGui::ColorEdit3("clear color", (float*)&clear_color);
+			//if (ImGui::Button("Test Window")) show_test_window ^= 1;
+			//if (ImGui::Button("Another Window")) show_another_window ^= 1;
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		}
+
+		// 2. Show another simple window, this time using an explicit Begin/End pair
+		/*if (show_another_window)
+		{
+			ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
+			ImGui::Begin("Another Window", &show_another_window);
+			ImGui::Text("Hello");
+			ImGui::End();
+		}
+
+		// 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
+		if (show_test_window)
+		{
+			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+			ImGui::ShowTestWindow(&show_test_window);
+		}*/
+
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(demoShader.programID);
-
+		
 		glUniformMatrix4fv(demoMVID, 1, GL_FALSE, &mv[0][0]);
 		glUniformMatrix4fv(demoPID, 1, GL_FALSE, &Projection[0][0]);
 		glUniform1f(demoTimeID, glfwGetTime());
+		glUniform1f(demoStepID, stepSize);
+		glUniform3f(demoLightID, lightPosition.x, lightPosition.y, lightPosition.z);
+		glUniform3f(demoCameraID, cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_quad);
@@ -153,6 +196,8 @@ int main(){
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
 
+		ImGui::Render();
+
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -160,6 +205,7 @@ int main(){
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
 
+	ImGui_ImplGlfwGL3_Shutdown();
 	// Cleanup VBO and shader
 	/*glDeleteBuffers(1, &vertexbuffer);
 	glDeleteFramebuffers(1, &FramebufferName);
@@ -215,11 +261,12 @@ void init(){
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
+
+	ImGui_ImplGlfwGL3_Init(window, true);
 }
 
-void subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs)
+float subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs)
 {
-	std::cout << "num vertices " << verts->size() << std::endl;
 	std::vector<vec3> newVerts;
 	std::vector<vec3> newNorms;
 	std::vector<vec2> newUVs;
@@ -284,8 +331,8 @@ void subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::v
 		*norms = std::move(newNorms);
 		*uvs = std::move(newUVs);
 	}
-	std::cout << "num vertices " << verts->size() << std::endl;
 
+	return abs(verts->at(0).x - verts->at(1).x);
 }
 
 void createQuad(std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs){
