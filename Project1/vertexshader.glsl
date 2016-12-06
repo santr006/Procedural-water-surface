@@ -10,6 +10,12 @@ uniform float time;
 uniform vec3 light;
 uniform vec3 camera;
 uniform float stepSize;
+uniform	vec3 waveLength;
+uniform	vec3 A;
+uniform	vec3 w;
+uniform	vec3 phi;
+uniform vec3 xDir;
+uniform vec3 yDir;
 
 out vec3 lightPosition;
 out vec3 cameraPosition;
@@ -125,28 +131,16 @@ float snoise(vec3 v)
 vec3 displacementForSingleWave(vec2 x0)
 {
 	//three waves
-	float waveLength = 2;
-	float waveLength2 = 2;
-	float waveLength3 = 2;
-	float A = 0.4;
-	float A2 = 0.4;
-	float A3 = 0.4;
-	vec2 k = vec2(2 * 3.14 / waveLength, 0);//direction
-	vec2 k2 = vec2(3.14 / waveLength, 3.14 / waveLength);//direction
-	vec2 k3 = vec2(0.5 * 3.14 / waveLength, 1.5 * 3.14 / waveLength);//direction
-	float w = 3.14;//speed
-	float w2 = 3.14;//speed
-	float w3 = 3.14;//speed
-	float phi = 0;//förskjutning
-	float phi2 = 3.14 / 2;//förskjutning
-	float phi3 = 0;//förskjutning
+	vec2 k = 2 * 3.14 / waveLength.x * normalize(vec2(xDir.x, yDir.x));
+	vec2 k2 = 2 * 3.14 / waveLength.y * normalize(vec2(xDir.y, yDir.y));
+	vec2 k3 = 2 * 3.14 / waveLength.z * normalize(vec2(xDir.z, yDir.z));
 
-	vec2 x = x0 - (k / k.length()) * A * sin(k * x0 - w * time + phi)
-				/*- (k2 / k2.length()) * A2 * sin(k2 * x0 - w2 * time + phi2)
-				- (k3 / k3.length()) * A3 * sin(k3 * x0 - w3 * time + phi3)*/;
-	float y = A * cos(dot(k, x0) - w * time + phi)
-			/*+ A2 * cos(dot(k2, x0) - w2 * time + phi2)
-			+ A3 * cos(dot(k3, x0) - w3 * time + phi3)*/;
+	vec2 x = x0 - (k / k.length()) * A.x * sin(k * x0 - w.x * time + phi.x)
+				- (k2 / k2.length()) * A.y * sin(k2 * x0 - w.y * time + phi.y)
+				- (k3 / k3.length()) * A.z * sin(k3 * x0 - w.z * time + phi.z);
+	float y = A.x * cos(dot(k, x0) - w.x * time + phi.x)
+			+ A.y * cos(dot(k2, x0) - w.y * time + phi.y)
+			+ A.z * cos(dot(k3, x0) - w.z * time + phi.z);
 
 	return vec3(x.x, y, x.y);
 }

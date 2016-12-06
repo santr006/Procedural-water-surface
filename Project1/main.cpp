@@ -116,6 +116,12 @@ int main(){
 	GLuint demoLightID = glGetUniformLocation(demoShader.programID, "light");
 	GLuint demoCameraID = glGetUniformLocation(demoShader.programID, "camera");
 	GLuint demoStepID = glGetUniformLocation(demoShader.programID, "stepSize");
+	GLuint demoWaveLengthID = glGetUniformLocation(demoShader.programID, "waveLength");
+	GLuint demoAmplitudeID = glGetUniformLocation(demoShader.programID, "A");
+	GLuint demoFrequencyID = glGetUniformLocation(demoShader.programID, "w");
+	GLuint demoOffsetID = glGetUniformLocation(demoShader.programID, "phi");
+	GLuint demoXDirID = glGetUniformLocation(demoShader.programID, "xDir");
+	GLuint demoYDirID = glGetUniformLocation(demoShader.programID, "yDir");
 	
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);	
@@ -125,6 +131,13 @@ int main(){
 	glm::mat4 mv = /*Projection */ View * Model;
 	glm::mat4 Light = glm::lookAt(lightPosition, cameraLookAtPosition, glm::vec3(0, 0, 1));
 	glm::mat4 mvpLight = Projection * Light * Model;
+
+	vec3 waveLength = vec3(2.146, 1.805, 1.659);
+	vec3 amplitude = vec3(0.117, 0.117, 0.244);
+	vec3 frequency = vec3(3.14, 3.14, 3.063);
+	vec3 offset = vec3(0, 2.389, 2.052); 
+	vec3 xDir = vec3(1, 0, 1);
+	vec3 yDir = vec3(0, 1, 0.502);
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -145,9 +158,27 @@ int main(){
 		// 1. Show a simple window
 		// Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
 		{
-			static float f = 0.0f;
-			ImGui::Text("Hello, world!");
-			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+			ImGui::Text("First wave");
+			ImGui::SliderFloat("Wave length 1", &waveLength.x, 0.0f, 10.0f);
+			ImGui::SliderFloat("Amplitude 1", &amplitude.x, 0.0f, 2.0f);
+			ImGui::SliderFloat("Frequency 1", &frequency.x, 0.0f, 6.28f);
+			ImGui::SliderFloat("Offset 1", &offset.x, 0.0f, 6.28f);
+			ImGui::SliderFloat("xDir 1", &xDir.x, 0.0f, 1.0f);
+			ImGui::SliderFloat("yDir 1", &yDir.x, 0.0f, 1.0f);
+			ImGui::Text("Second wave");
+			ImGui::SliderFloat("Wave length 2", &waveLength.y, 0.0f, 10.0f);
+			ImGui::SliderFloat("Amplitude 2", &amplitude.y, 0.0f, 2.0f);
+			ImGui::SliderFloat("Frequency 2", &frequency.y, 0.0f, 6.28f);
+			ImGui::SliderFloat("Offset 2", &offset.y, 0.0f, 6.28f);
+			ImGui::SliderFloat("xDir 2", &xDir.y, 0.0f, 1.0f);
+			ImGui::SliderFloat("yDir 2", &yDir.y, 0.0f, 1.0f);
+			ImGui::Text("Third wave");
+			ImGui::SliderFloat("Wave length 3", &waveLength.z, 0.0f, 10.0f);
+			ImGui::SliderFloat("Amplitude 3", &amplitude.z, 0.0f, 2.0f);
+			ImGui::SliderFloat("Frequency 3", &frequency.z, 0.0f, 6.28f);
+			ImGui::SliderFloat("Offset 3", &offset.z, 0.0f, 6.28f);
+			ImGui::SliderFloat("xDir 3", &xDir.z, 0.0f, 1.0f);
+			ImGui::SliderFloat("yDir 3", &yDir.z, 0.0f, 1.0f);
 			//ImGui::ColorEdit3("clear color", (float*)&clear_color);
 			//if (ImGui::Button("Test Window")) show_test_window ^= 1;
 			//if (ImGui::Button("Another Window")) show_another_window ^= 1;
@@ -181,6 +212,12 @@ int main(){
 		glUniform1f(demoStepID, stepSize);
 		glUniform3f(demoLightID, lightPosition.x, lightPosition.y, lightPosition.z);
 		glUniform3f(demoCameraID, cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		glUniform3f(demoWaveLengthID, waveLength.x, waveLength.y, waveLength.z);
+		glUniform3f(demoAmplitudeID, amplitude.x, amplitude.y, amplitude.z);
+		glUniform3f(demoFrequencyID, frequency.x, frequency.y, frequency.z);
+		glUniform3f(demoOffsetID, offset.x, offset.y, offset.z);
+		glUniform3f(demoXDirID, xDir.x, xDir.y, xDir.z);
+		glUniform3f(demoYDirID, yDir.x, yDir.y, yDir.z);
 
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_quad);
@@ -236,7 +273,7 @@ void init(){
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow(width, height, "Tutorial", NULL, NULL);
+	window = glfwCreateWindow(width*2, height, "Tutorial", NULL, NULL);
 	if (window == NULL){
 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
 		glfwTerminate();
