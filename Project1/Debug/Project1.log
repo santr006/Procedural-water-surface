@@ -1,15 +1,37 @@
-﻿Build started 2016-12-06 10:52:21.
+﻿Build started 2016-12-14 19:40:14.
      1>Project "C:\Users\Sandras\Documents\liu\Pocedurella\Project1\Project1\Project1.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Users\Sandras\Documents\Libraries\glm-0.9.7.5\glm" /I"C:\Users\Sandras\Documents\Libraries\glfw-3.2.bin.WIN32\glfw-3.2.bin.WIN32\include\GLFW" /I"C:\Users\Sandras\Documents\Libraries\glew-1.13.0-win32\glew-1.13.0\include" /IC:\Users\Sandras\Documents\Libraries\imgui /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp
          main.cpp
-     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(211): warning C4244: 'argument' : conversion from 'double' to 'GLfloat', possible loss of data
-     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(312): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(23): warning C4305: 'initializing' : truncation from 'double' to 'const float'
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(93): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(94): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(95): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(104): warning C4244: '=' : conversion from 'unsigned int' to 'float', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(106): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(112): warning C4244: 'argument' : conversion from 'float' to 'GLsizeiptr', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(117): warning C4244: 'argument' : conversion from 'float' to 'GLsizeiptr', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(122): warning C4244: 'argument' : conversion from 'float' to 'GLsizeiptr', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(127): warning C4244: 'argument' : conversion from 'float' to 'GLsizeiptr', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(172): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(196): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(198): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(205): warning C4244: 'argument' : conversion from 'float' to 'GLsizeiptr', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(214): warning C4244: 'argument' : conversion from 'double' to 'GLfloat', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(236): warning C4244: 'argument' : conversion from 'float' to 'GLsizei', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(339): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(340): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(356): warning C4244: 'argument' : conversion from 'float' to 'unsigned int', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(358): warning C4244: 'argument' : conversion from 'float' to 'unsigned int', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(359): warning C4244: 'argument' : conversion from 'float' to 'unsigned int', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(365): warning C4244: 'argument' : conversion from 'float' to 'unsigned int', possible loss of data
+     1>c:\users\sandras\documents\liu\pocedurella\project1\project1\main.cpp(397): warning C4018: '<' : signed/unsigned mismatch
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Sandras\Documents\liu\Pocedurella\Project1\Debug\Project1.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Users\Sandras\Documents\Libraries\glfw-3.2.bin.WIN32\glfw-3.2.bin.WIN32\lib-vc2013" /LIBPATH:"C:\Users\Sandras\Documents\Libraries\glew-1.13.0-win32\glew-1.13.0\lib" glfw3.lib opengl32.lib glew32.lib glu32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Sandras\Documents\liu\Pocedurella\Project1\Debug\Project1.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Sandras\Documents\liu\Pocedurella\Project1\Debug\Project1.lib" /MACHINE:X86 Debug\imgui.obj
          Debug\imgui_demo.obj
          Debug\imgui_draw.obj
          Debug\imgui_impl_glfw_gl3.obj
+         Debug\kiss_fft.obj
          Debug\main.obj
          Debug\myShader.obj
          Project1.vcxproj -> C:\Users\Sandras\Documents\liu\Pocedurella\Project1\Debug\Project1.exe
@@ -17,4 +39,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.61
+Time Elapsed 00:00:15.90

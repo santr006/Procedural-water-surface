@@ -71,6 +71,7 @@
     <ClCompile Include="..\..\..\..\Libraries\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\..\..\..\Libraries\imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui_impl_glfw_gl3.cpp" />
+    <ClCompile Include="kiss_fft.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="myShader.cpp" />
   </ItemGroup>
@@ -82,7 +83,9 @@
     <ClInclude Include="..\..\..\..\Libraries\imgui\stb_textedit.h" />
     <ClInclude Include="..\..\..\..\Libraries\imgui\stb_truetype.h" />
     <ClInclude Include="imgui_impl_glfw_gl3.h" />
+    <ClInclude Include="kiss_fft.h" />
     <ClInclude Include="myShader.h" />
+    <ClInclude Include="_kiss_fft_guts.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment3.glsl" />

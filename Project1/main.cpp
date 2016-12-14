@@ -15,23 +15,38 @@ using namespace glm;
 
 #include "myShader.h"
 #include "imgui_impl_glfw_gl3.h"
+#include "kiss_fft.h"
 
 GLFWwindow* window;
 const int width = 700;
 const int height = 700;
+const float g = 9.82;
+float stepSize;
+float numOfVerts;
+std::vector<vec2> waveDirections;
+std::vector<vec2> waveHeights;
+std::vector<kiss_fft_cpx> startHeights;
+std::vector<kiss_fft_cpx> conjugatedStartHeights;
+std::vector<vec2> vertexHeights;
 
-void init(); 
+void init();
+void fillVectors(int size);
+void fftFunc(vec2* output, kiss_fft_cpx cpx_in);
+void createWaveDirections(int amount, std::vector<vec2>* waves);
+kiss_fft_cpx calculateStartHeight(vec2 dir, float randomR, float randomI, float amplitude, vec2 windDir);
+void calculateWaveHeight(float waveNumber, float time);
+void calculatePosHeight(int vertex, vec3 vertexposition);
 float subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs);
 void createQuad(std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs);
 
 
 static const GLfloat g_vertex_buffer_quad[] = {
-	1.0f, 0.0f, 1.0f,
-	-1.0f, 0.0f, -1.0f,
-	1.0f, 0.0f, -1.0f,
-	1.0f, 0.0f, 1.0f,
-	-1.0f, 0.0f, 1.0f,
-	-1.0f, 0.0f, -1.0f,
+	5.0f, 0.0f, 5.0f,
+	-5.0f, 0.0f, -5.0f,
+	5.0f, 0.0f, -5.0f,
+	5.0f, 0.0f, 5.0f,
+	-5.0f, 0.0f, 5.0f,
+	-5.0f, 0.0f, -5.0f,
 };
 
 static const GLfloat g_vertex_buffer_quad_normals[] = {
@@ -53,10 +68,10 @@ static const GLfloat g_vertex_buffer_quad_tex[] = {
 };
 
 int main(){
-	vec3 cameraPosition(0, 4, -8);
+	vec3 cameraPosition(0, 8, -18);
 	vec3 cameraLookAtPosition(0, 0, 0);
 	float nearPlane = 1;
-	float farPlane = 10;
+	float farPlane = 25;
 	vec3 lightPosition(2, 3, 0);
 
 	init();
@@ -70,12 +85,25 @@ int main(){
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
 
+	createWaveDirections(10, &waveDirections);
+
+	float amplitude = 3;
+	float windSpeed = 0;
+	vec2 windDir = vec2(-0.5, 0.5);
+	for (int i = 0; i < waveDirections.size(); i++){
+		float randomR = -8.8390e-2;
+		float randomI = -7.8820e-1;
+		startHeights.push_back(calculateStartHeight(waveDirections[i], randomR, randomI, amplitude, windDir));
+		conjugatedStartHeights.push_back(calculateStartHeight(waveDirections[i], randomR, randomI, amplitude, windDir));
+	}
+
 	std::vector<vec3> quadVerts, quadNorms;
 	std::vector<vec2> quadUVs;
 	createQuad(&quadVerts, &quadNorms, &quadUVs);
-	float stepSize = subdivide(6, &quadVerts, &quadNorms, &quadUVs);
-	int numOfVerts = quadVerts.size();
+	stepSize = subdivide(4, &quadVerts, &quadNorms, &quadUVs);
+	numOfVerts = quadVerts.size();
 	std::cout << "main num vert " << numOfVerts << std::endl;
+	fillVectors(numOfVerts);
 
 	//Load grid into buffer
 	GLuint vertexbuffer_quad;
@@ -92,6 +120,11 @@ int main(){
 	glGenBuffers(1, &vertexbuffer_quad_tex);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_quad_tex);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * numOfVerts, &(quadUVs.at(0).x), GL_STATIC_DRAW);
+
+	GLuint vertexbuffer_vertex_heights;
+	glGenBuffers(1, &vertexbuffer_vertex_heights);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_vertex_heights);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * numOfVerts, &(vertexHeights[0].x), GL_STATIC_DRAW);
 
 	//for textures
 	//create framebuffer
@@ -116,12 +149,11 @@ int main(){
 	GLuint demoLightID = glGetUniformLocation(demoShader.programID, "light");
 	GLuint demoCameraID = glGetUniformLocation(demoShader.programID, "camera");
 	GLuint demoStepID = glGetUniformLocation(demoShader.programID, "stepSize");
-	GLuint demoWaveLengthID = glGetUniformLocation(demoShader.programID, "waveLength");
-	GLuint demoAmplitudeID = glGetUniformLocation(demoShader.programID, "A");
-	GLuint demoFrequencyID = glGetUniformLocation(demoShader.programID, "w");
-	GLuint demoOffsetID = glGetUniformLocation(demoShader.programID, "phi");
-	GLuint demoXDirID = glGetUniformLocation(demoShader.programID, "xDir");
-	GLuint demoYDirID = glGetUniformLocation(demoShader.programID, "yDir");
+	GLuint demoWaveDirsID = glGetUniformLocation(demoShader.programID, "waveDirections");
+	GLuint demoWaveHeightsID = glGetUniformLocation(demoShader.programID, "waveheights");
+	GLuint demoWindDirID = glGetUniformLocation(demoShader.programID, "windDir");
+	GLuint demoWindSpeedID = glGetUniformLocation(demoShader.programID, "windSpeed");
+	GLuint demoAmplitudeID = glGetUniformLocation(demoShader.programID, "amplitude");
 	
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, nearPlane, farPlane);	
@@ -132,20 +164,13 @@ int main(){
 	glm::mat4 Light = glm::lookAt(lightPosition, cameraLookAtPosition, glm::vec3(0, 0, 1));
 	glm::mat4 mvpLight = Projection * Light * Model;
 
-	vec3 waveLength = vec3(2.146, 1.805, 1.659);
-	vec3 amplitude = vec3(0.117, 0.117, 0.244);
-	vec3 frequency = vec3(3.14, 3.14, 3.063);
-	vec3 offset = vec3(0, 2.389, 2.052); 
-	vec3 xDir = vec3(1, 0, 1);
-	vec3 yDir = vec3(0, 1, 0.502);
-
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	//main loop
 	do {
 		// FPS
-			/*double currentTime = glfwGetTime();
-			nbFrames++;
+			float currentTime = glfwGetTime();
+			/*nbFrames++;
 			if (currentTime - lastTime >= 1.0){ // If last prinf() was more than 1 sec ago
 				// printf and reset timer
 				printf("%i frames/s\n", nbFrames);
@@ -153,53 +178,31 @@ int main(){
 				lastTime += 1.0;
 			}*/
 
-		ImGui_ImplGlfwGL3_NewFrame();
+		/*ImGui_ImplGlfwGL3_NewFrame();
 
 		// 1. Show a simple window
 		// Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
 		{
-			ImGui::Text("First wave");
-			ImGui::SliderFloat("Wave length 1", &waveLength.x, 0.0f, 10.0f);
-			ImGui::SliderFloat("Amplitude 1", &amplitude.x, 0.0f, 2.0f);
-			ImGui::SliderFloat("Frequency 1", &frequency.x, 0.0f, 6.28f);
-			ImGui::SliderFloat("Offset 1", &offset.x, 0.0f, 6.28f);
-			ImGui::SliderFloat("xDir 1", &xDir.x, 0.0f, 1.0f);
-			ImGui::SliderFloat("yDir 1", &yDir.x, 0.0f, 1.0f);
-			ImGui::Text("Second wave");
-			ImGui::SliderFloat("Wave length 2", &waveLength.y, 0.0f, 10.0f);
-			ImGui::SliderFloat("Amplitude 2", &amplitude.y, 0.0f, 2.0f);
-			ImGui::SliderFloat("Frequency 2", &frequency.y, 0.0f, 6.28f);
-			ImGui::SliderFloat("Offset 2", &offset.y, 0.0f, 6.28f);
-			ImGui::SliderFloat("xDir 2", &xDir.y, 0.0f, 1.0f);
-			ImGui::SliderFloat("yDir 2", &yDir.y, 0.0f, 1.0f);
-			ImGui::Text("Third wave");
-			ImGui::SliderFloat("Wave length 3", &waveLength.z, 0.0f, 10.0f);
-			ImGui::SliderFloat("Amplitude 3", &amplitude.z, 0.0f, 2.0f);
-			ImGui::SliderFloat("Frequency 3", &frequency.z, 0.0f, 6.28f);
-			ImGui::SliderFloat("Offset 3", &offset.z, 0.0f, 6.28f);
-			ImGui::SliderFloat("xDir 3", &xDir.z, 0.0f, 1.0f);
-			ImGui::SliderFloat("yDir 3", &yDir.z, 0.0f, 1.0f);
-			//ImGui::ColorEdit3("clear color", (float*)&clear_color);
-			//if (ImGui::Button("Test Window")) show_test_window ^= 1;
-			//if (ImGui::Button("Another Window")) show_another_window ^= 1;
+			ImGui::Text("Parameters");
+			ImGui::SliderFloat("Amplitude", &amplitude, 0.0f, 30.0f);
+			ImGui::SliderFloat("Wind speed", &windSpeed, 0.0f, 50.0f);
+			ImGui::SliderFloat("Wind xDir", &windDir.x, -1.0f, 1.0f);
+			ImGui::SliderFloat("Wind yDir", &windDir.y, -1.0f, 1.0f);
+			ImGui::SliderFloat("Wave xDir", &waveDirections[0].x, -10.0f, 10.0f);
+			ImGui::SliderFloat("Wave yDir", &waveDirections[0].y, -10.0f, 10.0f);
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		}
-
-		// 2. Show another simple window, this time using an explicit Begin/End pair
-		/*if (show_another_window)
-		{
-			ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-			ImGui::Begin("Another Window", &show_another_window);
-			ImGui::Text("Hello");
-			ImGui::End();
-		}
-
-		// 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-		if (show_test_window)
-		{
-			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-			ImGui::ShowTestWindow(&show_test_window);
 		}*/
+
+		for (int wave = 0; wave < waveDirections.size(); wave++)
+		{
+			calculateWaveHeight(wave, currentTime);
+		}
+
+		for (int vertex = 0; vertex < numOfVerts; vertex++)
+		{
+			calculatePosHeight(vertex,quadVerts[vertex]);
+		}
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * numOfVerts, &(vertexHeights[0].x), GL_STATIC_DRAW);
 
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glViewport(0, 0, width, height);
@@ -212,12 +215,11 @@ int main(){
 		glUniform1f(demoStepID, stepSize);
 		glUniform3f(demoLightID, lightPosition.x, lightPosition.y, lightPosition.z);
 		glUniform3f(demoCameraID, cameraPosition.x, cameraPosition.y, cameraPosition.z);
-		glUniform3f(demoWaveLengthID, waveLength.x, waveLength.y, waveLength.z);
-		glUniform3f(demoAmplitudeID, amplitude.x, amplitude.y, amplitude.z);
-		glUniform3f(demoFrequencyID, frequency.x, frequency.y, frequency.z);
-		glUniform3f(demoOffsetID, offset.x, offset.y, offset.z);
-		glUniform3f(demoXDirID, xDir.x, xDir.y, xDir.z);
-		glUniform3f(demoYDirID, yDir.x, yDir.y, yDir.z);
+		glUniform2fv(demoWaveDirsID, 10, &waveDirections[0].x);
+		glUniform2fv(demoWaveHeightsID, 10, &waveHeights[0].x);
+		glUniform2f(demoWindDirID, windDir.x, windDir.y);
+		glUniform1f(demoWindSpeedID, windSpeed);
+		glUniform1f(demoAmplitudeID, amplitude);
 
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_quad);
@@ -228,12 +230,16 @@ int main(){
 		glEnableVertexAttribArray(2);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_quad_tex);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glEnableVertexAttribArray(3);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_vertex_heights);
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glDrawArrays(GL_TRIANGLES, 0, numOfVerts);
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
+		glDisableVertexAttribArray(3);
 
-		ImGui::Render();
+		//ImGui::Render();
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -273,7 +279,7 @@ void init(){
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow(width*2, height, "Tutorial", NULL, NULL);
+	window = glfwCreateWindow(width, height, "Tutorial", NULL, NULL);
 	if (window == NULL){
 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
 		glfwTerminate();
@@ -300,6 +306,85 @@ void init(){
 	glDepthFunc(GL_LESS);
 
 	ImGui_ImplGlfwGL3_Init(window, true);
+}
+
+void fillVectors(int size)
+{
+	for (int x = 0; x < size; x++)
+	{
+		vec2 temp(0, 0);
+		vertexHeights.push_back(temp);
+	}
+	for (int i = 0; i < 10; i++)
+	{
+		waveHeights.push_back(vec2(0, 0));
+	}
+}
+
+void fftFunc(vec2* output, kiss_fft_cpx cpx_in){
+	int nfft = 1;
+	int is_inverse_fft = 1;
+	kiss_fft_cpx cpx_out;
+	kiss_fft_cfg cfg = kiss_fft_alloc(nfft, is_inverse_fft, 0, 0);
+	kiss_fft(cfg, &cpx_in, &cpx_out);
+	output->x = cpx_out.r;
+	output->y = cpx_out.i;
+	free(cfg);
+}
+
+void createWaveDirections(int amount, std::vector<vec2>* waves)
+{
+	for(int i = 0; i < amount; i++){
+		vec2 waveDir;
+		waveDir.x = rand() % 2;
+		waveDir.y = rand() % 4 - 2;
+		waves->push_back(waveDir);
+	}
+}
+
+kiss_fft_cpx calculateStartHeight(vec2 dir, float randomR, float randomI, float amplitude, vec2 windDir)
+{
+	vec2 h = vec2(randomR, randomI) * abs(dot(dir / (float)dir.length(), windDir / (float)windDir.length())) / (float)pow(dir.length(), 2) *
+		(float)sqrt(amplitude * 0.5 * exp(-1 / pow(dir.length() * pow(windDir.length(), 2) / g, 2)));
+	kiss_fft_cpx height;
+	height.r = h.x;
+	height.i = h.y;
+	return height;
+}
+
+void calculateWaveHeight(float waveNumber, float time){
+	float frequency = sqrt(g * waveDirections[waveNumber].length());
+
+	kiss_fft_cpx startH = startHeights[waveNumber];
+	kiss_fft_cpx conjugatedH = conjugatedStartHeights[waveNumber];
+
+	kiss_fft_cpx cpx;
+	cpx.r = (startH.r + conjugatedH.r) * cos(frequency * time) + (conjugatedH.r - startH.i) * sin(frequency * time);
+	cpx.i = (startH.i + conjugatedH.i) * cos(frequency * time) + (startH.r - conjugatedH.r) * sin(frequency * time);
+
+	fftFunc(&waveHeights[waveNumber], cpx);
+}
+
+void calculatePosHeight(int vertex, vec3 vertexposition)
+{
+	vec2 pos = vec2(vertexposition.x, vertexposition.z);
+	vec2 height = vec2(0, 0);
+
+	for (int i = 0; i < 10; i++){
+		vec2 wh = waveHeights[i];
+		//The dot product tells you what amount of one vector goes in the direction of another
+		float dotTerm = dot(waveDirections[i], pos);
+		float cosTerm = cos(dotTerm);
+		float sinTerm = sin(dotTerm);
+		float xTerm = wh.x * cosTerm - wh.y * sinTerm;
+		float yTerm = wh.y * cosTerm + wh.x * sinTerm;
+		height += vec2(xTerm, yTerm);
+	}
+
+	kiss_fft_cpx cpx;
+	cpx.r = height.x;
+	cpx.i = height.y;
+	fftFunc(&vertexHeights[vertex], cpx);
 }
 
 float subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs)
@@ -397,4 +482,5 @@ void createQuad(std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<
 	uvs->push_back(vec2(g_vertex_buffer_quad_tex[6], g_vertex_buffer_quad_tex[7]));
 	uvs->push_back(vec2(g_vertex_buffer_quad_tex[8], g_vertex_buffer_quad_tex[9]));
 	uvs->push_back(vec2(g_vertex_buffer_quad_tex[10], g_vertex_buffer_quad_tex[11]));
+
 }
