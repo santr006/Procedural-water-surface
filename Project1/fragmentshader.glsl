@@ -1,22 +1,12 @@
 #version 330 core
 
-//uniform float time;
-//uniform sampler2D tex;
-
 in vec3 lightPosition;
 in vec3 cameraPosition;
 in vec3 interpolatedNormal;
-//in vec2 st;
-//in vec3 fPos;
 
 out vec4 color;
 
-void main() {
-	//vec3 groundcolor = texture(tex,st).rgb;
-	//float alpha = texture(tex, st+vec2(-0.02*time, 0.0)).a;
-	//vec3 cloudcolor = vec3(1.0, 1.0, 1.0);
-	//vec3 diffusecolor = mix(groundcolor, cloudcolor, alpha);
-	
+void main() {	
 	vec3 LightIntensity = vec3(0.8f, 0.8f, 0.8f);
 	float strength = 0.4f;
 	float Shininess = 2.0f;
