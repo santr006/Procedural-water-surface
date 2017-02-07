@@ -20,9 +20,10 @@ using namespace glm;
 GLFWwindow* window;
 const int width = 700;
 const int height = 700;
-const float g = 9.82;
+const float g = 9.82f;
 float stepSize;
 float numOfVerts;
+int numOfWaves = 20;
 std::vector<vec2> waveDirections;
 std::vector<vec2> waveHeights;
 std::vector<kiss_fft_cpx> startHeights;
@@ -36,7 +37,6 @@ vec3 calculatePosAndNormal(int vertex, vec3 position);
 void createWaveDirections(int amount, std::vector<vec2>* waves);
 kiss_fft_cpx calculateStartHeight(vec2 dir, float randomR, float randomI, float amplitude, vec2 windDir);
 void calculateWaveHeight(float waveNumber, float time);
-//void calculatePosHeight(int vertex, vec3 vertexposition);
 float subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs);
 void createQuad(std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs);
 
@@ -69,7 +69,7 @@ static const GLfloat g_vertex_buffer_quad_tex[] = {
 };
 
 int main(){
-	vec3 cameraPosition(0, 8, -18);
+	vec3 cameraPosition(0, 5, -10);
 	vec3 cameraLookAtPosition(0, 0, 0);
 	float nearPlane = 1;
 	float farPlane = 25;
@@ -82,11 +82,12 @@ int main(){
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
 
-	createWaveDirections(10, &waveDirections);
+	createWaveDirections(numOfWaves, &waveDirections);
 
 	float amplitude = 3;
 	float windSpeed = 0;
 	vec2 windDir = vec2(-0.5, 0.5);
+	//calculate the starting height for every wave (needs to b done once)
 	for (int i = 0; i < waveDirections.size(); i++){
 		float randomR = -8.8390e-2;
 		float randomI = -7.8820e-1;
@@ -153,15 +154,15 @@ int main(){
 		ImGui::SliderFloat("Wave yDir", &waveDirections[0].y, -10.0f, 10.0f);*/
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		
-
+		//calculate the height at this time step for every wave
 		for (int wave = 0; wave < waveDirections.size(); wave++)
 		{
 			calculateWaveHeight(wave, currentTime);
 		}
 
+		//calculate the height at this time step for every vertex
 		for (int vertex = 0; vertex < numOfVerts; vertex++)
 		{
-			//calculatePosHeight(vertex, quadVerts[vertex]);
 			quadNorms[vertex] = calculatePosAndNormal(vertex, quadVerts[vertex]);
 		}
 		//update buffers
@@ -273,7 +274,7 @@ void fillVectors(int size)
 		vec2 temp(0, 0);
 		vertexHeights.push_back(temp);
 	}
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < numOfWaves; i++)
 	{
 		waveHeights.push_back(vec2(0, 0));
 	}
@@ -320,7 +321,8 @@ void calculateWaveHeight(float waveNumber, float time){
 	cpx.r = (startH.r + conjugatedH.r) * cos(frequency * time) + (conjugatedH.r - startH.i) * sin(frequency * time);
 	cpx.i = (startH.i + conjugatedH.i) * cos(frequency * time) + (startH.r - conjugatedH.r) * sin(frequency * time);
 
-	fftFunc(&waveHeights[waveNumber], cpx);
+	waveHeights[waveNumber].x = cpx.r;
+	waveHeights[waveNumber].y = cpx.i;
 }
 
 vec3 calculatePosAndNormal(int vertex, vec3 vertexposition)
@@ -330,7 +332,7 @@ vec3 calculatePosAndNormal(int vertex, vec3 vertexposition)
 	vec2 slope_x(0, 0);
 	vec2 slope_y(0, 0);
 
-	for (int i = 0; i < 10; i++){
+	for (int i = 0; i < numOfWaves; i++){
 		vec2 wh = waveHeights[i];
 		//The dot product tells you what amount of one vector goes in the direction of another
 		float dotTerm = dot(waveDirections[i], pos);
@@ -364,28 +366,6 @@ vec3 calculatePosAndNormal(int vertex, vec3 vertexposition)
 	vec3 normalz(0, deltaH.y, stepSize);
 	return normalize(cross(normalx, normalz));
 }
-
-/*void calculatePosHeight(int vertex, vec3 vertexposition)
-{
-	vec2 pos = vec2(vertexposition.x, vertexposition.z);
-	vec2 height = vec2(0, 0);
-
-	for (int i = 0; i < 10; i++){
-		vec2 wh = waveHeights[i];
-		//The dot product tells you what amount of one vector goes in the direction of another
-		float dotTerm = dot(waveDirections[i], pos);
-		float cosTerm = cos(dotTerm);
-		float sinTerm = sin(dotTerm);
-		float xTerm = wh.x * cosTerm - wh.y * sinTerm;
-		float yTerm = wh.y * cosTerm + wh.x * sinTerm;
-		height += vec2(xTerm, yTerm);
-	}
-
-	kiss_fft_cpx cpx;
-	cpx.r = height.x;
-	cpx.i = height.y;
-	fftFunc(&vertexHeights[vertex], cpx);
-}*/
 
 float subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs)
 {
