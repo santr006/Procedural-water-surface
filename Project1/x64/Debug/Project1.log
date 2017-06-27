@@ -1,0 +1,22 @@
+﻿  main.cpp
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(92): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(93): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(102): warning C4244: '=': conversion from 'unsigned __int64' to 'float', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(104): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(110): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(115): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(120): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(125): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(144): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(160): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(170): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(172): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(195): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(286): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(314): warning C4244: 'argument': conversion from 'float' to 'unsigned __int64', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(316): warning C4244: 'argument': conversion from 'float' to 'unsigned __int64', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(317): warning C4244: 'argument': conversion from 'float' to 'unsigned __int64', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(323): warning C4244: 'argument': conversion from 'float' to 'unsigned __int64', possible loss of data
+c:\users\sandra\documents\sandrasgit\procedural-water-surface\project1\main.cpp(324): warning C4244: 'argument': conversion from 'float' to 'unsigned __int64', possible loss of data
+  Project1.vcxproj -> C:\Users\Sandra\Documents\SandrasGit\Procedural-water-surface\x64\Debug\Project1.exe
+  Project1.vcxproj -> C:\Users\Sandra\Documents\SandrasGit\Procedural-water-surface\x64\Debug\Project1.pdb (Full PDB)

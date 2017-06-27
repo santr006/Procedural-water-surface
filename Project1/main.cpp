@@ -6,15 +6,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
-#include <imgui.h>
+/*#include <imgui.h>
 #include <imgui_internal.h>
 #include <stb_rect_pack.h>
 #include <stb_textedit.h>
-#include <stb_truetype.h>
+#include <stb_truetype.h>*/
 using namespace glm;
 
 #include "myShader.h"
-#include "imgui_impl_glfw_gl3.h"
+//#include "imgui_impl_glfw_gl3.h"
 #include "kiss_fft.h"
 
 GLFWwindow* window;
@@ -28,12 +28,12 @@ std::vector<vec2> waveDirections;
 std::vector<vec2> waveHeights;
 std::vector<kiss_fft_cpx> startHeights;
 std::vector<kiss_fft_cpx> conjugatedStartHeights;
-std::vector<vec2> vertexHeights;
+std::vector<kiss_fft_cpx> vertexHeights;
 
 void init();
 void fillVectors(int size);
-void fftFunc(vec2* output, kiss_fft_cpx cpx_in);
-vec3 calculatePosAndNormal(int vertex, vec3 position);
+void fftFunc(kiss_fft_cpx* cpx_out, kiss_fft_cpx* cpx_in);
+void calculatePosAndNormal(std::vector<vec3>* quadVerts, std::vector<vec3>* quadNorms);
 void createWaveDirections(int amount, std::vector<vec2>* waves);
 kiss_fft_cpx calculateStartHeight(vec2 dir, float randomR, float randomI, float amplitude, vec2 windDir);
 void calculateWaveHeight(float waveNumber, float time);
@@ -122,7 +122,7 @@ int main(){
 	GLuint vertexbuffer_vertex_heights;
 	glGenBuffers(1, &vertexbuffer_vertex_heights);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_vertex_heights);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * numOfVerts, &(vertexHeights[0].x), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * numOfVerts, &(vertexHeights[0].r), GL_STATIC_DRAW);
 
 	//Create and compile the shaders
 	Shader demoShader;
@@ -143,16 +143,16 @@ int main(){
 	do {
 		float currentTime = glfwGetTime();
 
-		ImGui_ImplGlfwGL3_NewFrame();
+		/*ImGui_ImplGlfwGL3_NewFrame();
 
-		/*ImGui::Text("Parameters");
+		ImGui::Text("Parameters");
 		ImGui::SliderFloat("Amplitude", &amplitude, 0.0f, 30.0f);
 		ImGui::SliderFloat("Wind speed", &windSpeed, 0.0f, 50.0f);
 		ImGui::SliderFloat("Wind xDir", &windDir.x, -1.0f, 1.0f);
 		ImGui::SliderFloat("Wind yDir", &windDir.y, -1.0f, 1.0f);
 		ImGui::SliderFloat("Wave xDir", &waveDirections[0].x, -10.0f, 10.0f);
-		ImGui::SliderFloat("Wave yDir", &waveDirections[0].y, -10.0f, 10.0f);*/
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::SliderFloat("Wave yDir", &waveDirections[0].y, -10.0f, 10.0f);
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);*/
 		
 		//calculate the height at this time step for every wave
 		for (int wave = 0; wave < waveDirections.size(); wave++)
@@ -161,13 +161,13 @@ int main(){
 		}
 
 		//calculate the height at this time step for every vertex
-		for (int vertex = 0; vertex < numOfVerts; vertex++)
-		{
-			quadNorms[vertex] = calculatePosAndNormal(vertex, quadVerts[vertex]);
-		}
+		//for (int vertex = 0; vertex < numOfVerts; vertex++)
+		//{
+			calculatePosAndNormal(&quadVerts, &quadNorms);
+		//}
 		//update buffers
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_vertex_heights);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * numOfVerts, &(vertexHeights[0].x), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * numOfVerts, &(vertexHeights[0].r), GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_quad_normals);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * numOfVerts, &(quadNorms.at(0).x), GL_STATIC_DRAW);
 
@@ -198,7 +198,7 @@ int main(){
 		glDisableVertexAttribArray(2);
 		glDisableVertexAttribArray(3);
 
-		ImGui::Render();
+		//ImGui::Render();
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -207,7 +207,7 @@ int main(){
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
 
-	ImGui_ImplGlfwGL3_Shutdown();
+	//ImGui_ImplGlfwGL3_Shutdown();
 	// Cleanup VBO and shader
 	glDeleteBuffers(1, &vertexbuffer_quad);
 	glDeleteBuffers(1, &vertexbuffer_quad_normals);
@@ -264,14 +264,16 @@ void init(){
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
 
-	ImGui_ImplGlfwGL3_Init(window, true);
+	//ImGui_ImplGlfwGL3_Init(window, true);
 }
 
 void fillVectors(int size)
 {
 	for (int x = 0; x < size; x++)
 	{
-		vec2 temp(0, 0);
+		kiss_fft_cpx temp;
+		temp.r = 0;
+		temp.i = 0;
 		vertexHeights.push_back(temp);
 	}
 	for (int i = 0; i < numOfWaves; i++)
@@ -280,14 +282,11 @@ void fillVectors(int size)
 	}
 }
 
-void fftFunc(vec2* output, kiss_fft_cpx cpx_in){
-	int nfft = 1;
+void fftFunc(kiss_fft_cpx* cpx_out, kiss_fft_cpx* cpx_in){
+	int nfft = vertexHeights.size();
 	int is_inverse_fft = 1;
-	kiss_fft_cpx cpx_out;
 	kiss_fft_cfg cfg = kiss_fft_alloc(nfft, is_inverse_fft, 0, 0);
-	kiss_fft(cfg, &cpx_in, &cpx_out);
-	output->x = cpx_out.r;
-	output->y = cpx_out.i;
+	kiss_fft(cfg, cpx_in, cpx_out);
 	free(cfg);
 }
 
@@ -325,46 +324,56 @@ void calculateWaveHeight(float waveNumber, float time){
 	waveHeights[waveNumber].y = cpx.i;
 }
 
-vec3 calculatePosAndNormal(int vertex, vec3 vertexposition)
+void calculatePosAndNormal(std::vector<vec3>* quadVerts, std::vector<vec3>* quadNorms)
 {
-	vec2 pos = vec2(vertexposition.x, vertexposition.z);
-	vec2 height = vec2(0, 0);
-	vec2 slope_x(0, 0);
-	vec2 slope_y(0, 0);
+	std::vector<kiss_fft_cpx> cpx_height;
+	std::vector<kiss_fft_cpx> cpx_slope_x, cpx_slope_y;
 
-	for (int i = 0; i < numOfWaves; i++){
-		vec2 wh = waveHeights[i];
-		//The dot product tells you what amount of one vector goes in the direction of another
-		float dotTerm = dot(waveDirections[i], pos);
-		float cosTerm = cos(dotTerm);
-		float sinTerm = sin(dotTerm);
-		float xTerm = wh.x * cosTerm - wh.y * sinTerm;
-		float yTerm = wh.y * cosTerm + wh.x * sinTerm;
-		height += vec2(xTerm, yTerm);
-		slope_x += vec2(-(waveDirections[i].x * yTerm), waveDirections[i].x * xTerm);
-		slope_y += vec2(-(waveDirections[i].y * yTerm), waveDirections[i].y * xTerm);
+	for (int j = 0; j < quadVerts->size(); j++) {
+		kiss_fft_cpx temp;
+		temp.r = 0;
+		temp.i = 0;
+		cpx_height.push_back(temp);
+		cpx_slope_x.push_back(temp);
+		cpx_slope_y.push_back(temp);
+
+		vec2 pos = vec2(quadVerts->at(j).x, quadVerts->at(j).z);
+
+		for (int i = 0; i < numOfWaves; i++) {
+			vec2 wh = waveHeights[i];
+			//The dot product tells you what amount of one vector goes in the direction of another
+			float dotTerm = dot(waveDirections[i], pos);
+			float cosTerm = cos(dotTerm);
+			float sinTerm = sin(dotTerm);
+			float xTerm = wh.x * cosTerm - wh.y * sinTerm;
+			float yTerm = wh.y * cosTerm + wh.x * sinTerm;
+			cpx_height[j].r += xTerm;
+			cpx_height[j].i += yTerm;
+			cpx_slope_x[j].r += -(waveDirections[i].x * yTerm);
+			cpx_slope_x[j].i += waveDirections[i].x * xTerm;
+			cpx_slope_y[j].r += -(waveDirections[i].y * yTerm);
+			cpx_slope_x[j].i += waveDirections[i].y * xTerm;
+		}
 	}
+	fftFunc(&vertexHeights[0], &cpx_height[0]);
 
-	kiss_fft_cpx cpx;
-	cpx.r = height.x;
-	cpx.i = height.y;
-	fftFunc(&vertexHeights[vertex], cpx);
+	std::vector<kiss_fft_cpx> fftx, ffty;
+	kiss_fft_cpx temp;
+	temp.r = 0;
+	temp.i = 0;
+	for (int i = 0; i < cpx_slope_x.size(); i++) {
+		fftx.push_back(temp);
+		ffty.push_back(temp);
+	}
+	fftFunc(&fftx[0], &cpx_slope_x[0]);
+	fftFunc(&ffty[0], &cpx_slope_y[0]);
 
-	kiss_fft_cpx cpx_x;
-	kiss_fft_cpx cpx_y;
-	cpx_x.r = slope_x.x;
-	cpx_x.i = slope_x.y;
-	cpx_y.r = slope_y.x;
-	cpx_y.i = slope_y.y;
-
-	vec2 fftx, ffty;
-	fftFunc(&fftx, cpx_x);
-	fftFunc(&ffty, cpx_y);
-
-	vec2 deltaH(fftx.x, ffty.x);
-	vec3 normalx(stepSize, deltaH.x, 0);
-	vec3 normalz(0, deltaH.y, stepSize);
-	return normalize(cross(normalx, normalz));
+	for (int i = 0; i < fftx.size(); i++) {
+		vec2 deltaH(fftx[i].r, ffty[i].r);
+		vec3 normalx(stepSize, deltaH.x, 0);
+		vec3 normalz(0, deltaH.y, stepSize);
+		quadNorms->at(i) = normalize(cross(normalx, normalz));
+	}
 }
 
 float subdivide(int n, std::vector<vec3>* verts, std::vector<vec3>* norms, std::vector<vec2>* uvs)
